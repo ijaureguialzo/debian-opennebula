@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Descarga la imagen Debian 13 desde el Marketplace de OpenNebula."""
 
+import base64
 import os
 import ssl
 import sys
@@ -39,18 +40,34 @@ def conectar():
     return one
 
 
-def buscar_app(one, nombre):
-    """Buscar una aplicación en el marketplace por nombre."""
+def buscar_app(one, nombre, arquitectura="x86_64"):
+    """Buscar una aplicación en el marketplace por nombre y arquitectura."""
     # Listar todas las aplicaciones del marketplace
     # Parámetros: filtro (-2 = todas), rango inicio, rango fin (-1 = sin límite)
     pool = one.marketapppool.info(-2, -1, -1)
 
     for app in pool.MARKETPLACEAPP:
-        # Buscar la app que coincida con el nombre y sea para AMD64
-        if nombre.lower() in app.NAME.lower() and "amd64" in app.NAME.lower():
+        if app.NAME != nombre:
+            continue
+
+        # Comprobar la arquitectura en los templates embebidos (base64)
+        arch_encontrada = False
+        for campo in ("APPTEMPLATE64", "VMTEMPLATE64"):
+            valor = app.TEMPLATE.get(campo, "")
+            if valor:
+                try:
+                    contenido = base64.b64decode(valor).decode("utf-8", errors="ignore")
+                    if arquitectura in contenido:
+                        arch_encontrada = True
+                        break
+                except Exception:
+                    pass
+
+        if arch_encontrada:
             print(f"Aplicación encontrada: {app.NAME} (ID: {app.ID})")
             print(f"  - Marketplace ID: {app.MARKETPLACE_ID}")
             print(f"  - Tipo: {app.TYPE}")
+            print(f"  - Arquitectura: {arquitectura}")
             print(f"  - Descripción: {app.TEMPLATE.get('DESCRIPTION', 'Sin descripción')}")
             return app
 
@@ -65,12 +82,12 @@ def descargar_app(one, app):
     print(f"\nDescargando '{app_name}' (ID: {app_id}) al datastore {DATASTORE_ID}...")
 
     # Exportar la aplicación del marketplace
-    # one.marketapp.export(app_id, nombre, datastore_id)
-    resultado = one.marketapp.export(app_id, app_name, DATASTORE_ID)
+    # Firma posicional: marketapp.export(appid, dsid, name, vmtemplate_name)
+    resultado = one.marketapp.export(app_id, DATASTORE_ID, app_name)
 
     print(f"Descarga iniciada correctamente.")
-    print(f"  - ID de imagen creada: {resultado.IMAGE}")
-    print(f"  - ID de template creado: {resultado.VMTEMPLATE}")
+    print(f"  - ID de imagen creada: {resultado['image']}")
+    print(f"  - ID de template creado: {resultado['vmtemplate']}")
 
     return resultado
 
