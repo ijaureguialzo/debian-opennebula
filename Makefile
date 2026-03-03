@@ -5,6 +5,7 @@ help: _header
 	@echo Opciones:
 	@echo -----------------------
 	@echo debian
+	@echo actualizar
 	@echo -----------------------
 
 _header:
@@ -14,3 +15,6 @@ _header:
 
 debian:
 	@poetry run python debian.py
+
+actualizar:
+	@ANSIBLE_HOST_KEY_CHECKING=False ANSIBLE_FORCE_COLOR=True ansible-playbook -i hosts.ini -u root actualizar.yml

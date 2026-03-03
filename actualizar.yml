@@ -1,0 +1,29 @@
+---
+- name: Actualizar Debian y reiniciar si es necesario
+  hosts: all
+  vars:
+    ansible_python_interpreter: auto_silent
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: Actualizar la lista de paquetes
+      ansible.builtin.apt:
+        update_cache: true
+
+    - name: Realizar dist-upgrade
+      ansible.builtin.apt:
+        upgrade: dist
+      register: apt_result
+
+    - name: Comprobar si es necesario reiniciar
+      ansible.builtin.stat:
+        path: /var/run/reboot-required
+      register: reboot_required
+
+    - name: Reiniciar la máquina si es necesario
+      ansible.builtin.reboot:
+        msg: "Reinicio tras apt dist-upgrade"
+        reboot_timeout: 300
+      when: reboot_required.stat.exists
+
