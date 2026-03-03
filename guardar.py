@@ -48,11 +48,14 @@ def conectar():
 
 
 def buscar_vm_temp(one):
-    """Buscar la VM con sufijo -temp."""
+    """Buscar la VM con sufijo -temp (excluyendo las que están en estado DONE)."""
+    # VM_STATE: 6=DONE
+    DONE = 6
+
     pool = one.vmpool.info(-2, -1, -1, -1)
 
     for vm in pool.VM:
-        if vm.NAME.endswith(SUFIJO_TEMP):
+        if vm.NAME.endswith(SUFIJO_TEMP) and vm.STATE != DONE:
             print(f"VM temporal encontrada: {vm.NAME} (ID: {vm.ID}, Estado: {vm.STATE})")
             return vm
 
@@ -80,6 +83,9 @@ def esperar_vm_apagada(one, vm_id):
     POWEROFF = 8
 
     print(f"\nEsperando a que la VM (ID: {vm_id}) se apague...")
+
+    # Esperar antes del primer chequeo para dar tiempo a que se procese la orden
+    time.sleep(POLL_INTERVAL)
 
     inicio = time.time()
     while True:
