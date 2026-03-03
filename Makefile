@@ -12,5 +12,5 @@ _header:
 	@echo Debian OpenNebula
 	@echo -----------------
 
-ocr:
+debian:
 	@poetry run python debian.py
