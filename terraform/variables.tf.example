@@ -1,20 +1,14 @@
 locals {
   opennebula = {
-    vm = {
-      name     = "debian-docker"
-      template = "Debian 12 - 20250222"
-      network  = "ciber-xx"
-      locked   = false
-    }
-    limits = {
-      cpu    = 1
-      vcpu   = 2
-      memory = 2 * 1024
-      disk   = 8 * 1024
-    }
+    source_template = "Debian 13"
+    output_template = "Debian 13 - 20260303"
   }
   ansible = {
-    connect_to_public_ip = false
-    install_portainer    = false
+    connect_to_public_ip = var.USE_PUBLIC_IP
   }
+}
+
+variable "USE_PUBLIC_IP" {
+  type        = bool
+  description = "Hay conectividad directa con el host o no"
 }
