@@ -152,7 +152,10 @@ def crear_template(one, image_id, nombre_definitivo):
     template = f"""
 NAME   = "{nombre_definitivo}"
 CPU    = 1
-VCPU   = 1
+VCPU   = 2
+CPU_MODEL = [
+    MODEL = "host-passthrough"
+]
 MEMORY = {VM_MEMORY_MB}
 CONTEXT = [
   NETWORK = "YES"
@@ -160,9 +163,6 @@ CONTEXT = [
 DISK   = [
   IMAGE_ID = {image_id},
   SIZE     = {VM_DISK_SIZE_MB}
-]
-NIC    = [
-  NETWORK_ID = {VM_NETWORK_ID}
 ]
 GRAPHICS = [
   TYPE   = "VNC",

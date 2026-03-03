@@ -172,7 +172,7 @@ def crear_vm(one, image_id, nombre_vm):
     """Crear una máquina virtual con la imagen descargada."""
     vm_template = f"""
 NAME   = "{nombre_vm}"
-CPU    = 0.5
+CPU    = 1
 VCPU   = 2
 CPU_MODEL = [
     MODEL = "host-passthrough"
