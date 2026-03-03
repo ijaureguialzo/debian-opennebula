@@ -34,6 +34,22 @@ VM_NETWORK_ID = 27
 IMAGE_POLL_INTERVAL = 5
 IMAGE_POLL_TIMEOUT = 600  # 10 minutos máximo
 
+# Intervalo de comprobación de la IP de la VM (segundos)
+VM_POLL_INTERVAL = 5
+VM_POLL_TIMEOUT = 300  # 5 minutos máximo
+
+# Mapa de IPs privadas a IPs públicas
+IP_PUBLICA = {
+    "172.20.227.240": "150.241.37.57",
+    "172.20.227.241": "150.241.37.58",
+    "172.20.227.242": "150.241.37.59",
+    "172.20.227.243": "150.241.37.60",
+    "172.20.228.240": "150.241.37.80",
+    "172.20.228.241": "150.241.37.81",
+    "172.20.228.242": "150.241.37.82",
+    "172.20.228.243": "150.241.37.83",
+}
+
 
 def conectar():
     """Conectar al servidor OpenNebula mediante XML-RPC."""
@@ -191,6 +207,55 @@ GRAPHICS = [
     return vm_id
 
 
+def obtener_ip_vm(one, vm_id):
+    """Consultar la IP asignada a la VM, esperando a que esté disponible."""
+    print(f"\nEsperando a que la VM (ID: {vm_id}) tenga una IP asignada...")
+
+    inicio = time.time()
+    while True:
+        vm = one.vm.info(vm_id)
+
+        # La IP está en la NIC de la VM
+        try:
+            nics = vm.TEMPLATE.get("NIC", None)
+            if nics:
+                # Puede ser un dict (una NIC) o una lista (varias NICs)
+                if isinstance(nics, dict):
+                    nics = [nics]
+                for nic in nics:
+                    ip = nic.get("IP", "")
+                    if ip:
+                        print(f"  IP asignada: {ip}")
+                        return ip
+        except Exception:
+            pass
+
+        transcurrido = time.time() - inicio
+        if transcurrido > VM_POLL_TIMEOUT:
+            print(f"  Timeout: La VM no obtuvo IP en {VM_POLL_TIMEOUT}s.")
+            sys.exit(1)
+
+        print(f"  Sin IP todavía - esperando {VM_POLL_INTERVAL}s...")
+        time.sleep(VM_POLL_INTERVAL)
+
+
+def guardar_hosts_ini(ip_privada):
+    """Guardar la IP (pública si existe, privada si no) en hosts.ini."""
+    ip = IP_PUBLICA.get(ip_privada, ip_privada)
+
+    if ip != ip_privada:
+        print(f"\n  IP privada {ip_privada} → IP pública {ip}")
+    else:
+        print(f"\n  IP sin mapeo público, se usa directamente: {ip}")
+
+    with open("hosts.ini", "w") as f:
+        f.write(f"{ip}\n")
+
+    print(f"  Fichero hosts.ini guardado con IP: {ip}")
+
+    return ip
+
+
 def main():
     """Programa principal."""
     print("=" * 60)
@@ -235,7 +300,13 @@ def main():
     esperar_imagen(one, image_id)
 
     # Crear la máquina virtual
-    crear_vm(one, image_id, nombre_imagen)
+    vm_id = crear_vm(one, image_id, nombre_imagen)
+
+    # Obtener la IP de la VM
+    ip_privada = obtener_ip_vm(one, vm_id)
+
+    # Guardar la IP en hosts.ini
+    guardar_hosts_ini(ip_privada)
 
     print("\n¡Proceso completado con éxito!")
 
