@@ -103,7 +103,7 @@ def generar_nombre_imagen(one, nombre_base):
     sufijo = 1
 
     while True:
-        nombre = f"{nombre_base} - {fecha}{sufijo:02d}"
+        nombre = f"{nombre_base} - {fecha}{sufijo:02d}-temp"
         if nombre not in nombres_existentes:
             return nombre
         sufijo += 1
