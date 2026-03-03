@@ -23,6 +23,9 @@ ID_RSA_PUB = os.getenv("ID_RSA_PUB")
 # Nombre de la aplicación a buscar en el marketplace
 APP_NAME = "Debian 13"
 
+# Sufijo que identifica los recursos temporales
+SUFIJO_TEMP = "-temp"
+
 # Datastore donde se descargará la imagen (1 = default)
 DATASTORE_ID = 1
 
@@ -120,7 +123,7 @@ def generar_nombre_imagen(one, nombre_base):
     sufijo = 1
 
     while True:
-        nombre = f"{nombre_base} - {fecha}{sufijo:02d}-temp"
+        nombre = f"{nombre_base} - {fecha}{sufijo:02d}{SUFIJO_TEMP}"
         if nombre not in nombres_existentes:
             return nombre
         sufijo += 1
