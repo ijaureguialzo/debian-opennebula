@@ -21,38 +21,28 @@ INSECURE = os.getenv("OPENNEBULA_INSECURE", "false").lower() == "true"
 ID_RSA_PUB = os.getenv("ID_RSA_PUB")
 
 # Nombre de la aplicación a buscar en el marketplace
-APP_NAME = "Debian 13"
+APP_NAME = os.getenv("APP_NAME", "Debian 13")
 
 # Sufijo que identifica los recursos temporales
-SUFIJO_TEMP = "-temp"
+SUFIJO_TEMP = os.getenv("SUFIJO_TEMP", "-temp")
 
 # Datastore donde se descargará la imagen (1 = default)
-DATASTORE_ID = 1
+DATASTORE_ID = int(os.getenv("DATASTORE_ID", "1"))
 
 # Configuración de la máquina virtual
-VM_MEMORY_MB = 2048  # 2 GB de RAM
-VM_DISK_SIZE_MB = 8192  # 8 GB de disco
-VM_NETWORK_ID = 27
+VM_MEMORY_MB = int(os.getenv("VM_MEMORY_MB", "2048"))
+VM_DISK_SIZE_MB = int(os.getenv("VM_DISK_SIZE_MB", "8192"))
+VM_NETWORK_ID = int(os.getenv("VM_NETWORK_ID", "27"))
 
-# Intervalo de comprobación del estado de la imagen (segundos)
-IMAGE_POLL_INTERVAL = 5
-IMAGE_POLL_TIMEOUT = 600  # 10 minutos máximo
+# Intervalos de comprobación (segundos)
+POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", "5"))
+IMAGE_POLL_TIMEOUT = int(os.getenv("IMAGE_POLL_TIMEOUT", "600"))
+VM_POLL_TIMEOUT = int(os.getenv("VM_POLL_TIMEOUT", "300"))
 
-# Intervalo de comprobación de la IP de la VM (segundos)
-VM_POLL_INTERVAL = 5
-VM_POLL_TIMEOUT = 300  # 5 minutos máximo
-
-# Mapa de IPs privadas a IPs públicas
-IP_PUBLICA = {
-    "172.20.227.240": "150.241.37.57",
-    "172.20.227.241": "150.241.37.58",
-    "172.20.227.242": "150.241.37.59",
-    "172.20.227.243": "150.241.37.60",
-    "172.20.228.240": "150.241.37.80",
-    "172.20.228.241": "150.241.37.81",
-    "172.20.228.242": "150.241.37.82",
-    "172.20.228.243": "150.241.37.83",
-}
+# Mapa de IPs privadas a IPs públicas (formato: "ip_privada=ip_publica,ip_privada=ip_publica,...")
+IP_PUBLICA = dict(
+    par.split("=") for par in os.getenv("IP_PUBLICA", "").split(",") if "=" in par
+)
 
 
 def conectar():
@@ -174,8 +164,8 @@ def esperar_imagen(one, image_id):
             print(f"  Timeout: La imagen no se descargó en {IMAGE_POLL_TIMEOUT}s.")
             sys.exit(1)
 
-        print(f"  Estado actual: {estado} - esperando {IMAGE_POLL_INTERVAL}s...")
-        time.sleep(IMAGE_POLL_INTERVAL)
+        print(f"  Estado actual: {estado} - esperando {POLL_INTERVAL}s...")
+        time.sleep(POLL_INTERVAL)
 
 
 def crear_vm(one, image_id, nombre_vm):
@@ -243,8 +233,8 @@ def obtener_ip_vm(one, vm_id):
             print(f"  Timeout: La VM no obtuvo IP en {VM_POLL_TIMEOUT}s.")
             sys.exit(1)
 
-        print(f"  Sin IP todavía - esperando {VM_POLL_INTERVAL}s...")
-        time.sleep(VM_POLL_INTERVAL)
+        print(f"  Sin IP todavía - esperando {POLL_INTERVAL}s...")
+        time.sleep(POLL_INTERVAL)
 
 
 def guardar_hosts_ini(ip_privada):

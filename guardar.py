@@ -19,17 +19,17 @@ INSECURE = os.getenv("OPENNEBULA_INSECURE", "false").lower() == "true"
 ID_RSA_PUB = os.getenv("ID_RSA_PUB")
 
 # Sufijo que identifica los recursos temporales
-SUFIJO_TEMP = "-temp"
+SUFIJO_TEMP = os.getenv("SUFIJO_TEMP", "-temp")
 
 # Configuración de la máquina virtual (misma que en crear.py)
-VM_MEMORY_MB = 2048
-VM_DISK_SIZE_MB = 8192
-VM_NETWORK_ID = 27
+VM_MEMORY_MB = int(os.getenv("VM_MEMORY_MB", "2048"))
+VM_DISK_SIZE_MB = int(os.getenv("VM_DISK_SIZE_MB", "8192"))
+VM_NETWORK_ID = int(os.getenv("VM_NETWORK_ID", "27"))
 
 # Intervalos de comprobación (segundos)
-POLL_INTERVAL = 5
-VM_POLL_TIMEOUT = 300  # 5 minutos
-IMAGE_POLL_TIMEOUT = 600  # 10 minutos
+POLL_INTERVAL = int(os.getenv("POLL_INTERVAL", "5"))
+VM_POLL_TIMEOUT = int(os.getenv("VM_POLL_TIMEOUT", "300"))
+IMAGE_POLL_TIMEOUT = int(os.getenv("IMAGE_POLL_TIMEOUT", "600"))
 
 
 def conectar():
