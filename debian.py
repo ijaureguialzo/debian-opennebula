@@ -18,6 +18,7 @@ ENDPOINT = os.getenv("OPENNEBULA_ENDPOINT")
 USERNAME = os.getenv("OPENNEBULA_USERNAME")
 PASSWORD = os.getenv("OPENNEBULA_PASSWORD")
 INSECURE = os.getenv("OPENNEBULA_INSECURE", "false").lower() == "true"
+ID_RSA_PUB = os.getenv("ID_RSA_PUB")
 
 # Nombre de la aplicación a buscar en el marketplace
 APP_NAME = "Debian 13"
@@ -181,6 +182,10 @@ NAME   = "{nombre_vm}"
 CPU    = 1
 VCPU   = 1
 MEMORY = {VM_MEMORY_MB}
+CONTEXT = [
+  NETWORK = "YES",
+  SSH_PUBLIC_KEY = "{ID_RSA_PUB}"
+]
 DISK   = [
   IMAGE_ID = {image_id},
   SIZE     = {VM_DISK_SIZE_MB}
