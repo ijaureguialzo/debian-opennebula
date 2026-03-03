@@ -1,0 +1,17 @@
+services:
+  terraform-ansible:
+    build:
+      context: ./docker
+      dockerfile: Dockerfile
+      args:
+        - TERRAFORM_VERSION=${TERRAFORM_VERSION}
+    hostname: workspace
+    env_file:
+      - ./.env
+    volumes:
+      - ./terraform:/terraform
+      - ./ansible:/ansible
+      - homedir:/root
+
+volumes:
+  homedir:

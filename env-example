@@ -1,0 +1,11 @@
+# Versiones de software
+TERRAFORM_VERSION=latest
+
+# Conexión a OpenNebula
+OPENNEBULA_ENDPOINT="https://opennebula.example.org/RPC2"
+OPENNEBULA_USERNAME="ciber-xx"
+OPENNEBULA_PASSWORD="900563a48c044074dc467feac110df09372301dbc10968c2c4491ad2398c93e6"
+OPENNEBULA_INSECURE="true"
+
+# Clave privada para usar dentro del workspace
+ID_RSA=/home/user/.ssh/id_rsa
