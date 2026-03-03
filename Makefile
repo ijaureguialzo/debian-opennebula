@@ -4,7 +4,7 @@ help: _header
 	${info }
 	@echo Opciones:
 	@echo -----------------------
-	@echo debian
+	@echo crear
 	@echo actualizar
 	@echo -----------------------
 
@@ -13,8 +13,8 @@ _header:
 	@echo Debian OpenNebula
 	@echo -----------------
 
-debian:
-	@poetry run python debian.py
+crear:
+	@poetry run python crear.py
 
 actualizar:
 	@ANSIBLE_HOST_KEY_CHECKING=False ANSIBLE_FORCE_COLOR=True ansible-playbook -i hosts.ini -u root actualizar.yml
