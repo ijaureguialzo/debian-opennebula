@@ -29,6 +29,9 @@ SUFIJO_TEMP = os.getenv("SUFIJO_TEMP", "-temp")
 # Datastore donde se descargará la imagen (1 = default)
 DATASTORE_ID = int(os.getenv("DATASTORE_ID", "1"))
 
+# Datastore de sistema que usará la VM al instanciarse (0 = sin preferencia explícita)
+SYSTEM_DATASTORE_ID = int(os.getenv("SYSTEM_DATASTORE_ID", "0"))
+
 # Configuración de la máquina virtual
 VM_MEMORY_MB = int(os.getenv("VM_MEMORY_MB", "2048"))
 VM_DISK_SIZE_MB = int(os.getenv("VM_DISK_SIZE_MB", "8192"))
@@ -61,29 +64,28 @@ def conectar():
     return one
 
 
-def seleccionar_datastore(one):
-    """Mostrar los datastores disponibles y pedir al usuario que elija uno."""
-    # Tipos de datastore en OpenNebula: 0=IMAGE, 1=SYSTEM, 2=FILE
-    # Solo mostramos los de tipo IMAGE (0), que son donde se almacenan las imágenes
-    TIPO_IMAGE = 0
+def seleccionar_datastore(one, tipo, etiqueta, default_id):
+    """Mostrar los datastores de un tipo concreto y pedir al usuario que elija uno.
 
+    Tipos de datastore en OpenNebula: 0=IMAGE, 1=SYSTEM, 2=FILE
+    """
     pool = one.datastorepool.info()
-    datastores = [ds for ds in pool.DATASTORE if ds.TYPE == TIPO_IMAGE]
+    datastores = [ds for ds in pool.DATASTORE if ds.TYPE == tipo]
 
     if not datastores:
-        print("  Advertencia: no se encontraron datastores de tipo IMAGE. Se usará el ID por defecto.")
-        return DATASTORE_ID
+        print(f"  Advertencia: no se encontraron datastores de tipo {etiqueta}. Se usará el ID por defecto.")
+        return default_id
 
-    print("\nDatastores disponibles:")
+    print(f"\nDatastores {etiqueta} disponibles:")
     for ds in datastores:
         print(f"  [{ds.ID}] {ds.NAME}")
 
     while True:
-        respuesta = input(f"\n¿En qué datastore descargar la imagen? [por defecto: {DATASTORE_ID}]: ").strip()
+        respuesta = input(f"\n¿Qué datastore {etiqueta} utilizar? [por defecto: {default_id}]: ").strip()
 
         if respuesta == "":
-            print(f"  Usando datastore por defecto: {DATASTORE_ID}")
-            return DATASTORE_ID
+            print(f"  Usando datastore {etiqueta} por defecto: {default_id}")
+            return default_id
 
         if respuesta.isdigit():
             ds_id = int(respuesta)
@@ -203,8 +205,13 @@ def esperar_imagen(one, image_id):
         time.sleep(POLL_INTERVAL)
 
 
-def crear_vm(one, image_id, nombre_vm):
+def crear_vm(one, image_id, nombre_vm, system_datastore_id=SYSTEM_DATASTORE_ID):
     """Crear una máquina virtual con la imagen descargada."""
+    # Restricción de datastore de sistema solo si se especifica uno concreto
+    sched_ds = ""
+    if system_datastore_id > 0:
+        sched_ds = f'\nSCHED_DS_REQUIREMENTS = "ID = {system_datastore_id}"'
+
     vm_template = f"""
 NAME   = "{nombre_vm}"
 CPU    = 1
@@ -227,13 +234,15 @@ NIC    = [
 GRAPHICS = [
   TYPE   = "VNC",
   LISTEN = "0.0.0.0"
-]
+]{sched_ds}
 """
 
     print(f"\nCreando máquina virtual...")
     print(f"  - RAM: {VM_MEMORY_MB} MB")
     print(f"  - Disco: {VM_DISK_SIZE_MB} MB")
     print(f"  - Red ID: {VM_NETWORK_ID}")
+    if system_datastore_id > 0:
+        print(f"  - Datastore de sistema: {system_datastore_id}")
 
     # one.vm.allocate(template, pending=False) → crea e inicia la VM
     vm_id = one.vm.allocate(vm_template, False)
@@ -329,7 +338,10 @@ def main():
     print(f"Nombre de la imagen: {nombre_imagen}")
 
     # Seleccionar el datastore donde se descargará la imagen
-    datastore_id = seleccionar_datastore(one)
+    datastore_id = seleccionar_datastore(one, tipo=0, etiqueta="IMAGE", default_id=DATASTORE_ID)
+
+    # Seleccionar el datastore de sistema que usará la VM al instanciarse
+    system_datastore_id = seleccionar_datastore(one, tipo=1, etiqueta="SYSTEM", default_id=SYSTEM_DATASTORE_ID)
 
     # Descargar la aplicación
     resultado = descargar_app(one, app, nombre_imagen, datastore_id)
@@ -339,7 +351,7 @@ def main():
     esperar_imagen(one, image_id)
 
     # Crear la máquina virtual
-    vm_id = crear_vm(one, image_id, nombre_imagen)
+    vm_id = crear_vm(one, image_id, nombre_imagen, system_datastore_id)
 
     # Obtener la IP de la VM
     ip_privada = obtener_ip_vm(one, vm_id)
