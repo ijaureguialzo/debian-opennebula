@@ -61,6 +61,41 @@ def conectar():
     return one
 
 
+def seleccionar_datastore(one):
+    """Mostrar los datastores disponibles y pedir al usuario que elija uno."""
+    # Tipos de datastore en OpenNebula: 0=IMAGE, 1=SYSTEM, 2=FILE
+    # Solo mostramos los de tipo IMAGE (0), que son donde se almacenan las imágenes
+    TIPO_IMAGE = 0
+
+    pool = one.datastorepool.info()
+    datastores = [ds for ds in pool.DATASTORE if ds.TYPE == TIPO_IMAGE]
+
+    if not datastores:
+        print("  Advertencia: no se encontraron datastores de tipo IMAGE. Se usará el ID por defecto.")
+        return DATASTORE_ID
+
+    print("\nDatastores disponibles:")
+    for ds in datastores:
+        print(f"  [{ds.ID}] {ds.NAME}")
+
+    while True:
+        respuesta = input(f"\n¿En qué datastore descargar la imagen? [por defecto: {DATASTORE_ID}]: ").strip()
+
+        if respuesta == "":
+            print(f"  Usando datastore por defecto: {DATASTORE_ID}")
+            return DATASTORE_ID
+
+        if respuesta.isdigit():
+            ds_id = int(respuesta)
+            ids_validos = {ds.ID for ds in datastores}
+            if ds_id in ids_validos:
+                return ds_id
+            else:
+                print(f"  ID '{ds_id}' no válido. Elige uno de la lista.")
+        else:
+            print("  Entrada no válida. Introduce un número.")
+
+
 def buscar_app(one, nombre, arquitectura="x86_64"):
     """Buscar una aplicación en el marketplace por nombre y arquitectura."""
     # Listar todas las aplicaciones del marketplace
@@ -119,15 +154,15 @@ def generar_nombre_imagen(one, nombre_base):
         sufijo += 1
 
 
-def descargar_app(one, app, nombre_imagen):
+def descargar_app(one, app, nombre_imagen, datastore_id=DATASTORE_ID):
     """Exportar (descargar) una aplicación del marketplace al datastore local."""
     app_id = app.ID
 
-    print(f"\nDescargando '{app.NAME}' como '{nombre_imagen}' al datastore {DATASTORE_ID}...")
+    print(f"\nDescargando '{app.NAME}' como '{nombre_imagen}' al datastore {datastore_id}...")
 
     # Exportar la aplicación del marketplace
     # Firma posicional: marketapp.export(appid, dsid, name, vmtemplate_name)
-    resultado = one.marketapp.export(app_id, DATASTORE_ID, nombre_imagen, nombre_imagen)
+    resultado = one.marketapp.export(app_id, datastore_id, nombre_imagen, nombre_imagen)
 
     print(f"Descarga iniciada correctamente.")
     print(f"  - ID de imagen creada: {resultado['image']}")
@@ -293,8 +328,11 @@ def main():
     nombre_imagen = generar_nombre_imagen(one, APP_NAME)
     print(f"Nombre de la imagen: {nombre_imagen}")
 
+    # Seleccionar el datastore donde se descargará la imagen
+    datastore_id = seleccionar_datastore(one)
+
     # Descargar la aplicación
-    resultado = descargar_app(one, app, nombre_imagen)
+    resultado = descargar_app(one, app, nombre_imagen, datastore_id)
     image_id = resultado['image']
 
     # Esperar a que la imagen esté lista
