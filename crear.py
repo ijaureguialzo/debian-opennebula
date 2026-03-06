@@ -98,6 +98,16 @@ def seleccionar_datastore(one, tipo, etiqueta, default_id):
             print("  Entrada no válida. Introduce un número.")
 
 
+def pedir_nombre_app(default=APP_NAME):
+    """Solicitar al usuario el nombre de la aplicación a descargar."""
+    try:
+        respuesta = input(f"Nombre de la aplicación a descargar [{default}]: ").strip()
+    except (KeyboardInterrupt, EOFError):
+        print("\nOperación cancelada por el usuario.")
+        sys.exit(0)
+    return respuesta if respuesta else default
+
+
 def buscar_app(one, nombre, arquitectura="x86_64"):
     """Buscar una aplicación en el marketplace por nombre y arquitectura."""
     # Listar todas las aplicaciones del marketplace
@@ -318,12 +328,15 @@ def main():
     version = one.system.version()
     print(f"Conectado. Versión de OpenNebula: {version}\n")
 
+    # Pedir el nombre de la aplicación a descargar
+    nombre_app = pedir_nombre_app()
+
     # Buscar la aplicación en el marketplace
-    print(f"Buscando '{APP_NAME}' para x86_64 en el marketplace...")
-    app = buscar_app(one, APP_NAME)
+    print(f"\nBuscando '{nombre_app}' para x86_64 en el marketplace...")
+    app = buscar_app(one, nombre_app)
 
     if app is None:
-        print(f"\nError: No se encontró la aplicación '{APP_NAME}' para x86_64.")
+        print(f"\nError: No se encontró la aplicación '{nombre_app}' para x86_64.")
         print("Aplicaciones disponibles con 'Debian' en el nombre:")
 
         pool = one.marketapppool.info(-2, -1, -1)
@@ -334,7 +347,7 @@ def main():
         sys.exit(1)
 
     # Generar un nombre único para la imagen
-    nombre_imagen = generar_nombre_imagen(one, APP_NAME)
+    nombre_imagen = generar_nombre_imagen(one, nombre_app)
     print(f"Nombre de la imagen: {nombre_imagen}")
 
     # Seleccionar el datastore donde se descargará la imagen
