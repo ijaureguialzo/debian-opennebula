@@ -47,19 +47,52 @@ def conectar():
     return one
 
 
+# Mapa legible de estados de VM
+VM_ESTADOS = {
+    0: "INIT",
+    1: "PENDING",
+    2: "HOLD",
+    3: "ACTIVE",
+    4: "STOPPED",
+    5: "SUSPENDED",
+    6: "DONE",
+    7: "FAILED",
+    8: "POWEROFF",
+}
+
+
 def buscar_vm_temp(one):
-    """Buscar la VM con sufijo -temp (excluyendo las que están en estado DONE)."""
-    # VM_STATE: 6=DONE
+    """Listar las VMs con sufijo -temp (excluyendo DONE) y pedir al usuario que elija una."""
     DONE = 6
 
     pool = one.vmpool.info(-2, -1, -1, -1)
 
-    for vm in pool.VM:
-        if vm.NAME.endswith(SUFIJO_TEMP) and vm.STATE != DONE:
-            print(f"VM temporal encontrada: {vm.NAME} (ID: {vm.ID}, Estado: {vm.STATE})")
-            return vm
+    vms_temp = [
+        vm for vm in pool.VM
+        if vm.NAME.endswith(SUFIJO_TEMP) and vm.STATE != DONE
+    ]
 
-    return None
+    if not vms_temp:
+        return None
+
+    print(f"Se encontraron {len(vms_temp)} VM(s) temporal(es):\n")
+    for idx, vm in enumerate(vms_temp, start=1):
+        estado_str = VM_ESTADOS.get(vm.STATE, str(vm.STATE))
+        print(f"  [{idx}] {vm.NAME}  (ID: {vm.ID}, Estado: {estado_str})")
+
+    print()
+    while True:
+        try:
+            eleccion = input(f"Elige la VM a guardar [1-{len(vms_temp)}]: ").strip()
+            num = int(eleccion)
+            if 1 <= num <= len(vms_temp):
+                return vms_temp[num - 1]
+            print(f"  Por favor introduce un número entre 1 y {len(vms_temp)}.")
+        except ValueError:
+            print("  Entrada no válida. Introduce un número.")
+        except (KeyboardInterrupt, EOFError):
+            print("\nOperación cancelada por el usuario.")
+            sys.exit(0)
 
 
 def apagar_vm(one, vm_id):
@@ -284,16 +317,16 @@ def main():
     version = one.system.version()
     print(f"Conectado. Versión de OpenNebula: {version}\n")
 
-    # Buscar la VM temporal
+    # Buscar y seleccionar la VM temporal
     vm = buscar_vm_temp(one)
     if vm is None:
-        print("Error: No se encontró ninguna VM con sufijo '-temp'.")
+        print(f"Error: No se encontró ninguna VM con sufijo '{SUFIJO_TEMP}'.")
         sys.exit(1)
 
     vm_id = vm.ID
     nombre_temp = vm.NAME
     nombre_definitivo = nombre_temp.replace(SUFIJO_TEMP, "")
-    print(f"  Nombre temporal: {nombre_temp}")
+    print(f"\n  VM seleccionada:  {nombre_temp} (ID: {vm_id})")
     print(f"  Nombre definitivo: {nombre_definitivo}")
 
     # Apagar la VM
