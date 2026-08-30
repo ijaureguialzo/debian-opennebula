@@ -4,6 +4,7 @@ help: _header
 	${info }
 	@echo Opciones:
 	@echo -----------------------
+	@echo init
 	@echo crear
 	@echo actualizar
 	@echo guardar
@@ -13,6 +14,9 @@ _header:
 	@echo -----------------
 	@echo Debian OpenNebula
 	@echo -----------------
+
+init:
+	@poetry install
 
 crear:
 	@poetry run python crear.py
