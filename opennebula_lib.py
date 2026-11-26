@@ -454,7 +454,8 @@ CPU_MODEL = [
 ]
 MEMORY = {VM_MEMORY_MB}
 CONTEXT = [
-  NETWORK = "YES"
+  NETWORK = "YES",
+  SSH_PUBLIC_KEY = "$USER[SSH_PUBLIC_KEY]"
 ]
 DISK   = [
   IMAGE_ID = {image_id},
